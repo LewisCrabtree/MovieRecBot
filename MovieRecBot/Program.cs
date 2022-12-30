@@ -68,7 +68,7 @@ namespace MovieRecBot
             _client.Ready += async () => await commands.RegisterCommandsGloballyAsync(true);
 
             var token = File.ReadAllText("token.txt");
-            await _client.LoginAsync(Discord.TokenType.Bot, token);
+            await _client.LoginAsync(TokenType.Bot, token);
             await _client.StartAsync();
 
             await Task.Delay(-1);

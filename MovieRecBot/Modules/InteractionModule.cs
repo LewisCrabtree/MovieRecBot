@@ -1,6 +1,10 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using TMDbLib.Client;
+using TMDbLib.Objects;
+using TMDbLib.Utilities;
+using System.Net.Http;
 
 namespace MovieRecBot.Modules
 {
@@ -8,12 +12,17 @@ namespace MovieRecBot.Modules
     {
         public InteractionService Commands { get; set; } = null!;
 
-        [SlashCommand("recping", "Recieve a ping message.")]
-        public async Task HandlePingCommand()
+        #region register
+
+        [SlashCommand("register", "Enter Letterboxd user ID to register watchlist and ratings with this discord account.")]
+        public async Task HandleRegisterCommand([Summary(description: "Letterboxd user ID")] string userID)
         {
-            Console.WriteLine("PING!");
-            await RespondAsync("PING!", ephemeral: true);
+            Console.WriteLine(userID);
         }
+
+        #endregion
+
+        #region recommend
 
         [SlashCommand("recommend", "Get a movie recomendation.")]
         public async Task HandleRecommendCommand()
@@ -34,27 +43,35 @@ namespace MovieRecBot.Modules
             await RespondAsync("Select a genre", ephemeral: true, components: component.Build());
         }
 
-        [SlashCommand("register", "Enter Letterboxd user ID to register watchlist and ratings with this discord account.")]
-        public async Task HandleRegisterCommand([Summary(description: "Letterboxd user ID")] string userID)
-        {
-            Console.WriteLine(userID);
-        }
-
         [ComponentInteraction("mnuGenre")]
         public async Task HandleMenuSelection()
         {
+            var privateKey = File.ReadAllText("tmdbKey.txt");
+            TMDbClient client = new(privateKey);
+            var query = await client.SearchMovieAsync("The Whale");
+            var result = query.Results.FirstOrDefault();
+            if (result == null)
+                return;
+
+            var movie = await client.GetMovieAsync(result.Id);
+
+            var embed = new EmbedBuilder()
+                .WithTitle($"{movie.Title}")
+                .WithFooter(footer => footer.Text = "Suggested by MovieRecBot")
+                .WithColor(Color.Blue)
+                .WithDescription(movie.Overview)
+                .WithUrl($"https://www.themoviedb.org/movie/{movie.Id}")
+                .WithCurrentTimestamp()
+                .WithImageUrl($"https://www.themoviedb.org/t/p/w600_and_h900_bestv2/{movie.PosterPath}")
+                .Build();
+
             await ((SocketMessageComponent)Context.Interaction).UpdateAsync(x =>
             {
-                x.Content = "Minions: The Rise of Gru";
+                x.Content = string.Empty;
+                x.Embeds = new Embed[] { embed };
             });
         }
-    }
 
-    public class Modal : IModal
-    {
-        public string Title => "Demo Modal";
-        [InputLabel("Send a greeting!")]
-        [ModalTextInput("greeting_input", TextInputStyle.Short, placeholder: "Be nice..", maxLength: 100)]
-        public string Message { get; set; } = null!;
+        #endregion
     }
 }

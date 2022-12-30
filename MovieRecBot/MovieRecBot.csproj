@@ -11,6 +11,7 @@
     <PackageReference Include="Discord.Net" Version="3.9.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
+    <PackageReference Include="TMDbLib" Version="1.9.2" />
   </ItemGroup>
 
 </Project>
