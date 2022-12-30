@@ -9,12 +9,15 @@ using Microsoft.Extensions.Hosting;
 
 namespace MovieRecBot
 {
-    public class program
+    public class Program
     {
         private DiscordSocketClient _client;
 
         // Program entry point
-        public static Task Main(string[] args) => new program().MainAsync();
+        public static Task Main()
+        {
+            return new Program().MainAsync();
+        }
 
         public async Task MainAsync()
         {
@@ -29,7 +32,7 @@ namespace MovieRecBot
             // Add the configuration to the registered services
             .AddSingleton(config)
             // Add the DiscordSocketClient, along with specifying the GatewayIntents and user caching
-            .AddSingleton(x => new DiscordSocketClient(new DiscordSocketConfig
+            .AddSingleton(__ => new DiscordSocketClient(new DiscordSocketConfig
             {
                 GatewayIntents = Discord.GatewayIntents.AllUnprivileged,
                 LogGatewayIntentWarnings = false,

@@ -18,10 +18,9 @@ namespace MovieRecBot.Modules
         [SlashCommand("recommend", "Get a movie recomendation.")]
         public async Task HandleRecommendCommand()
         {
-
             var menu = new SelectMenuBuilder()
             {
-                CustomId = "menu",
+                CustomId = "mnuGenre",
                 Placeholder = "Select a genre:",
             };
 
@@ -33,6 +32,21 @@ namespace MovieRecBot.Modules
             component.WithSelectMenu(menu);
 
             await RespondAsync("Select a genre", ephemeral: true, components: component.Build());
+        }
+
+        [SlashCommand("register", "Enter Letterboxd user ID to register watchlist and ratings with this discord account.")]
+        public async Task HandleRegisterCommand([Summary(description: "Letterboxd user ID")] string userID)
+        {
+            Console.WriteLine(userID);
+        }
+
+        [ComponentInteraction("mnuGenre")]
+        public async Task HandleMenuSelection()
+        {
+            await ((SocketMessageComponent)Context.Interaction).UpdateAsync(x =>
+            {
+                x.Content = "Minions: The Rise of Gru";
+            });
         }
     }
 
