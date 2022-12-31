@@ -37,7 +37,7 @@ namespace MovieRecBot
                 GatewayIntents = Discord.GatewayIntents.AllUnprivileged,
                 LogGatewayIntentWarnings = false,
                 AlwaysDownloadUsers = true,
-                LogLevel = LogSeverity.Debug
+                LogLevel = LogSeverity.Warning
             }))
             // Used for slash commands and their registration with Discord
             .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
