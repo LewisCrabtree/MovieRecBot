@@ -50,8 +50,6 @@ namespace MovieRecBot
 
             var commands = provider.GetRequiredService<InteractionService>();
             _client = provider.GetRequiredService<DiscordSocketClient>();
-            var config = provider.GetRequiredService<IConfigurationRoot>();
-
             await provider.GetRequiredService<InteractionHandler>().InitializeAsync();
 
             // Subscribe to client log events
