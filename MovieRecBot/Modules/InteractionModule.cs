@@ -1,12 +1,9 @@
 ﻿using Discord;
 using Discord.Interactions;
-using Discord.WebSocket;
 using TMDbLib.Client;
 using OpenAI.GPT3.Managers;
 using OpenAI.GPT3;
-using OpenAI.GPT3.Extensions;
 using OpenAI.GPT3.ObjectModels;
-using OpenAI.GPT3.Interfaces;
 using OpenAI.GPT3.ObjectModels.RequestModels;
 using TMDbLib.Objects.Movies;
 
@@ -34,31 +31,31 @@ namespace MovieRecBot.Modules
         { //Just get the prompt from the button ID and handle it like a new rec command
             string[] parts = tag.Split('~');
             var model = parts[0];
-            var prompt = String.Join("", parts[1..]);
+            var prompt = string.Concat(parts[1..]);
 
             await Context.Interaction.DeferAsync();
             (var title, var year) = await GetRecommendationFromGPT(prompt, Models.TextCurieV1);
             var movie = await GetMovieFromTMDB(title, year);
             var embeds = BuildEmbeds(movie);
             var components = BuildMessageComponent(prompt);
-            await Context.Interaction.ModifyOriginalResponseAsync(x => 
+            await Context.Interaction.ModifyOriginalResponseAsync(x =>
             {
                 x.Embeds = embeds;
                 x.Components = components;
             });
         }
 
-        private MessageComponent BuildMessageComponent(string prompt)
+        private static MessageComponent BuildMessageComponent(string prompt)
         {
             return new ComponentBuilder()
-                .WithButton("Next (Ada $0.0001)", $"nextrec:{Models.TextAdaV1}~{prompt}")
-                .WithButton("Next (Babbage $0.0002)", $"nextrec:{Models.TextBabbageV1}~{prompt}")
-                .WithButton("Next (Curie $0.001)", $"nextrec:{Models.TextCurieV1}~{prompt}")
-                .WithButton("Next (Davinci $0.01)", $"nextrec:{Models.TextDavinciV3}~{prompt}")
+                .WithButton("Next (AdaV1)", $"nextrec:{Models.TextAdaV1}~{prompt}")
+                .WithButton("Next (BabbageV1)", $"nextrec:{Models.TextBabbageV1}~{prompt}")
+                .WithButton("Next (CurieV1)", $"nextrec:{Models.TextCurieV1}~{prompt}")
+                .WithButton("Next (DavinciV3)", $"nextrec:{Models.TextDavinciV3}~{prompt}")
                 .Build();
         }
 
-        private async Task<Movie> GetMovieFromTMDB(string title, int year)
+        private static async Task<Movie> GetMovieFromTMDB(string title, int year)
         {
             var privateKey = File.ReadAllText("tmdbKey.txt");
             TMDbClient client = new(privateKey);
@@ -95,12 +92,11 @@ namespace MovieRecBot.Modules
             }
 
             var result = completionResult?.Choices.FirstOrDefault()?.Text.Trim() ?? "The Whale (2022)";
-            Console.WriteLine($"\n\n{result}\n\n");
 
             return GetTitleYear(result);
         }
 
-        private Embed[] BuildEmbeds(Movie movie)
+        private static Embed[] BuildEmbeds(Movie movie)
         {
             var embed = new EmbedBuilder()
                 .WithTitle($"{movie.Title} ({movie.ReleaseDate?.Year.ToString() ?? ""})")
@@ -127,7 +123,7 @@ namespace MovieRecBot.Modules
             // The title is the first part
             string title = parts[0].Trim();
 
-            if (title is null || title == String.Empty)
+            if (string.IsNullOrEmpty(title))
                 return defaultMovie;
 
             // Validate that the year is a valid integer

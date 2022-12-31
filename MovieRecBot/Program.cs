@@ -11,7 +11,7 @@ namespace MovieRecBot
 {
     public class Program
     {
-        private DiscordSocketClient _client;
+        private DiscordSocketClient _client = null!;
 
         // Program entry point
         public static Task Main()
@@ -21,28 +21,23 @@ namespace MovieRecBot
 
         public async Task MainAsync()
         {
-            var config = new ConfigurationBuilder()
-            // this will be used more later on
-            .SetBasePath(AppContext.BaseDirectory)
-            .Build();
+            var config = new ConfigurationBuilder().SetBasePath(AppContext.BaseDirectory).Build();
 
-            using IHost host = Host.CreateDefaultBuilder()
-                .ConfigureServices((_, services) =>
-            services
-            // Add the configuration to the registered services
-            .AddSingleton(config)
-            // Add the DiscordSocketClient, along with specifying the GatewayIntents and user caching
-            .AddSingleton(__ => new DiscordSocketClient(new DiscordSocketConfig
+            using IHost host = Host.CreateDefaultBuilder().ConfigureServices((_, services) =>
             {
-                GatewayIntents = Discord.GatewayIntents.AllUnprivileged,
-                LogGatewayIntentWarnings = false,
-                AlwaysDownloadUsers = true,
-                LogLevel = LogSeverity.Warning
-            }))
-            // Used for slash commands and their registration with Discord
-            .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
-            // Required to subscribe to the various client events used in conjunction with Interactions
-            .AddSingleton<InteractionHandler>())
+                services.AddSingleton(new ConfigurationBuilder())
+                .AddSingleton(__ => new DiscordSocketClient(new DiscordSocketConfig
+                {// Add the DiscordSocketClient, along with specifying the GatewayIntents and user caching
+                    GatewayIntents = GatewayIntents.AllUnprivileged,
+                    LogGatewayIntentWarnings = false,
+                    AlwaysDownloadUsers = true,
+                    LogLevel = LogSeverity.Warning
+                }))
+                // Used for slash commands and their registration with Discord
+                .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
+                // Required to subscribe to the various client events used in conjunction with Interactions
+                .AddSingleton<InteractionHandler>();
+            })
             .Build();
 
             await RunAsync(host);
@@ -69,7 +64,9 @@ namespace MovieRecBot
 
             var token = File.ReadAllText("token.txt");
             await _client.LoginAsync(TokenType.Bot, token);
+            Console.WriteLine("Logged In");
             await _client.StartAsync();
+            Console.WriteLine("Started");
 
             await Task.Delay(-1);
         }
