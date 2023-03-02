@@ -18,7 +18,7 @@ namespace MovieRecBot.Modules
         {
             await DeferAsync(ephemeral: true);
 
-            (var title, var year) = await GetRecommendationFromGPT(prompt, Models.TextDavinciV3);
+            (var title, var year) = await GetRecommendationFromGPT(prompt, Models.ChatGpt3_5Turbo);
             var movie = await GetMovieFromTMDB(title, year);
             var embeds = BuildEmbeds(movie);
             var components = BuildMessageComponent(prompt);
@@ -27,15 +27,15 @@ namespace MovieRecBot.Modules
         }
 
         [ComponentInteraction("nextrec:*")]
-        public async Task CheapRecHandler(string tag)
+        public async Task NextRecHandler(string tag)
         { //Just get the prompt from the button ID and handle it like a new rec command
             string[] parts = tag.Split('~');
             var model = parts[0];
             var prompt = string.Concat(parts[1..]);
 
             await Context.Interaction.DeferAsync();
-            (var title, var year) = await GetRecommendationFromGPT(prompt, Models.TextCurieV1);
-            var movie = await GetMovieFromTMDB(title, year);
+            (string title, int year) = await GetRecommendationFromGPT(prompt, model);
+            Movie movie = await GetMovieFromTMDB(title, year);
             var embeds = BuildEmbeds(movie);
             var components = BuildMessageComponent(prompt);
             await Context.Interaction.ModifyOriginalResponseAsync(x =>
@@ -48,10 +48,7 @@ namespace MovieRecBot.Modules
         private static MessageComponent BuildMessageComponent(string prompt)
         {
             return new ComponentBuilder()
-                .WithButton("Next (AdaV1)", $"nextrec:{Models.TextAdaV1}~{prompt}")
-                .WithButton("Next (BabbageV1)", $"nextrec:{Models.TextBabbageV1}~{prompt}")
-                .WithButton("Next (CurieV1)", $"nextrec:{Models.TextCurieV1}~{prompt}")
-                .WithButton("Next (DavinciV3)", $"nextrec:{Models.TextDavinciV3}~{prompt}")
+                .WithButton("Next Recommendation", $"nextrec:{Models.ChatGpt3_5Turbo}~{prompt}")
                 .Build();
         }
 
@@ -71,7 +68,7 @@ namespace MovieRecBot.Modules
             return await client.GetMovieAsync(result?.Id ?? 785084);
         }
 
-        private async Task<(string, int)> GetRecommendationFromGPT(string prompt, string model)
+        private static async Task<(string, int)> GetRecommendationFromGPT(string prompt, string model)
         {
             var apiKey = File.ReadAllText("openAiKey.txt");
             var openAiService = new OpenAIService(new OpenAiOptions()
@@ -79,19 +76,25 @@ namespace MovieRecBot.Modules
                 ApiKey = apiKey
             });
 
-            var completionResult = await openAiService.Completions.CreateCompletion(new CompletionCreateRequest()
+            var completionResult = await openAiService.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
             {
-                Prompt = $"Recommend a movie. {prompt}. Output format: Title (Year). Example: Movie Title (Year).",
-                MaxTokens = 100,
-                User = Context.User.Username
-            }, model);
+                Messages = new List<ChatMessage>
+                {
+                    ChatMessage.FromUser($"Recommend a movie. The only output provided should be the title and year in the format: Title (Year).  No other text. The prompt is: {prompt}. Output format: Title (Year). Example: Movie Title (Year)."),
+                },
+                Model = Models.ChatGpt3_5Turbo
+            });
 
-            if (!completionResult.Successful)
+            if (completionResult.Successful)
+            {
+                Console.WriteLine(completionResult.Choices.First().Message.Content);
+            }
+            else
             {
                 Console.WriteLine($"Error:\n {completionResult?.Error?.Code}: {completionResult?.Error?.Message}");
             }
 
-            var result = completionResult?.Choices.FirstOrDefault()?.Text.Trim() ?? "The Whale (2022)";
+            var result = completionResult?.Choices[0].Message.Content ?? "The Whale (2022)";
 
             return GetTitleYear(result);
         }
